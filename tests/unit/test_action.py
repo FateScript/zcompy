@@ -1,5 +1,6 @@
 import pytest
-from zcompy.action import URLs, OSEnv, ProcessID, UserNames, Hosts
+
+from zcompy.action import Hosts, OSEnv, ProcessID, URLs, UserNames
 
 
 @pytest.mark.parametrize("cls, expected_type_hint, expected_action_source", [

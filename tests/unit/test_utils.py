@@ -1,4 +1,5 @@
 import pytest
+
 from zcompy.utils import pattern_to_glob
 
 
