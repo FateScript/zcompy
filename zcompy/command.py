@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 from .option import Option
@@ -71,6 +72,20 @@ _{self.name}_subcommands() {{
         if as_file:
             completion_code = f"#compdef {self.name}\n\n{completion_code}\n_{self.name}"
         return completion_code
+
+    def completion_entry(self, output_dir: str = "~/.zsh/Completion"):
+        """Generate completion script for a Command with sub-commands."""
+        output_dir = os.path.expanduser(output_dir)
+
+        completion_code = self.complete_source(as_file=True)
+
+        # write to file
+        comp_file = os.path.join(output_dir, f"_{self.name}")
+        with open(comp_file, "w") as f:
+            f.write(completion_code)
+
+        print(f"Completion file created at: {comp_file}")
+        print(f"Please add `compdef _{self.name} {self.name}` to your zsh config.")
 
     def generate_non_subcommand_completion(self, indent_length=2) -> str:
         assert len(self.sub_commands) == 0, "Not a subcommand type."

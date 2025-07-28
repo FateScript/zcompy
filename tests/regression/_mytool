@@ -1,0 +1,48 @@
+#compdef mytool
+
+_mytool_subcommands() {
+  local -a subcmds
+  subcmds=(
+    "init:Initialize a new project"
+    "build:Build the project"
+    "deploy:Deploy the project"
+  )
+  _describe -t subcommands 'subcommands' subcmds
+}
+
+_mytool() {
+  local state
+
+  _arguments -C \
+    '(--verbose -v)'{--verbose,-v}'[Enable verbose output]' \
+    '(--config -c)'{--config,-c}'[Config file path]:FILE:_files' \
+    '1: :->cmds' \
+    '*:: :->args'
+
+  case $state in
+    cmds)
+      _mytool_subcommands
+      ;;
+    args)
+      case $words[1] in
+        init)
+          _arguments \
+            '(--template -t)'{--template,-t}'[Template to use]' \
+            '(--force -f)'{--force,-f}'[Force overwrite existing files]'
+          ;;
+        build)
+          _arguments \
+            '(--output -o)'{--output,-o}'[Output directory]:DIR:_files -/' \
+            '(--optimize -O)'{--optimize,-O}'[Optimization level]'
+          ;;
+        deploy)
+          _arguments \
+            '(--server -s)'{--server,-s}'[Server to deploy to]' \
+            '(--dry-run)'--dry-run'[Show what would be deployed]'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_mytool

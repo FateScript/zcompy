@@ -1,0 +1,21 @@
+#compdef abc
+
+_ls_number() {
+  local -a choices
+  local line opt msg
+
+  while IFS= read -r line; do
+    opt="${line%% *}"
+    msg="${line#* }"
+    choices+=("$opt:$msg")
+  done < <(ls_number)
+  _describe -t choices 'choices' choices
+}
+
+_abc() {
+  _arguments \
+    '(-a)'-a'[Hello world]'\
+    '(-b -c)'{-b,-c}'[Another option]:NUMBER:_ls_number'
+}
+
+_abc
