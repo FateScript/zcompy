@@ -12,19 +12,10 @@ from .action import Action
 
 __all__ = [
     "Completion",
+    "ExtendAction",
+    "GitBranches",
+    "GitCommits",
 ]
-
-
-"""
-_git_branches() {
-  local branches
-  branches=("${(f)$(git for-each-ref --format='%(refname:short)' refs/heads)}")
-  _values 'branch' $branches
-}
-"""
-
-"""
-"""
 
 
 class ExtendAction(Action):
