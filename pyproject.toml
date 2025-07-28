@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zcompy"
+version = "0.0.1"
+description = "Generate zsh completions with Python."
+requires-python = ">=3.8"
+authors = [
+    { name = "Feng Wang", email = "wangfeng19950315@163.com" }
+]
+urls = { "Homepage" = "https://github.com/FateScript/zcompy" }
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+
+[tool.setuptools]
+packages = ["zcompy"]
+
+[tool.setuptools.package-data]
+zcompy = ["**/*"]
+
+[tool.setuptools.exclude-package-data]
+zcompy = ["**/__pycache__", "**/*.pyc", "**/*.pyo"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "toml",
+    "tox"
+]
+
+[tool.isort]
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+balanced_wrapping = true
+known_MYSELF = ["zcompy"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "MYSELF", "LOCALFOLDER"]
+no_lines_before = ["STDLIB"]
+default_section = "FIRSTPARTY"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "F403"]
