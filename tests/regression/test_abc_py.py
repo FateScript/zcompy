@@ -4,6 +4,7 @@ import os
 import tempfile
 
 from zcompy import Command, Completion, Option
+from zcompy.action.action import Files
 
 
 def ls_number():
@@ -15,19 +16,20 @@ def ls_number():
         print(f"{idx} {letter}")
 
 
-def test_complete_abc():
-    # set a temp path for function saving
-    os.environ["ZCOMPY_FUNC_SAVE_PATH"] = tempfile.gettempdir()
-
+def test_complete_abc_py():
     cmd = Command("abc", "abc command")
 
     opts = [
-        Option(("-a",), "Hello world"),
-        Option(("-b", "-c"), "Another option", type="NUMBER", complete_func=Completion(ls_number)),
+        Option(("-a",), "Hello", complete_func=Files()),
+        Option(
+            ("-b", "-c"), "Another option", type="NUMBER",
+            complete_func=Completion(ls_number, shell_embed=True),
+        ),
+        Option("--test", "It's a test", allow_repeat=True),
     ]
     cmd.add_options(opts)
 
-    with open(os.path.join(os.path.dirname(__file__), "_abc"), "r") as f:
+    with open(os.path.join(os.path.dirname(__file__), "_abc_py"), "r") as f:
         answer = f.read()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -41,4 +43,4 @@ def test_complete_abc():
 
 
 if __name__ == "__main__":
-    test_complete_abc()
+    test_complete_abc_py()

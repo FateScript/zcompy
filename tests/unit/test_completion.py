@@ -123,9 +123,8 @@ def test_completion_write_python(tmp_path):
 
 def test_completion_with_lambda_function():
     """Test Completion with lambda function."""
-    completion = Completion(lambda: ["lambda1", "lambda2"])
     with pytest.raises(ValueError):
-        completion.action_source()
+        Completion(lambda: ["lambda1", "lambda2"])
 
 
 def test_completion_equality():

@@ -1,0 +1,35 @@
+#compdef abc
+
+__ls_number() {
+    python3 -c '
+def ls_number():
+    import random
+
+    random_letter = "abcdefghijklmnopqrstuvwxyz"
+    for idx in range(10):
+        letter = "".join(random.choices(random_letter, k=10))
+        print(f"{idx} {letter}")
+ls_number()
+'
+}
+
+_ls_number() {
+  local -a choices
+  local line opt msg
+
+  while IFS= read -r line; do
+    opt="${line%% *}"
+    msg="${line#* }"
+    choices+=("$opt:$msg")
+  done < <(__ls_number)
+  _describe -t choices 'choices' choices
+}
+
+_abc() {
+  _arguments \
+    '(-a)'-a'[Hello]:Files:_files'\
+    '(-b -c)'{-b,-c}'[Another option]:NUMBER:_ls_number'\
+    '*--test[It'\''s a test]'
+}
+
+_abc

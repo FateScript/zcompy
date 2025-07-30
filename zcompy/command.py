@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 
+from .action import ExtendAction
 from .option import Option
 
 __all__ = ["Command"]
@@ -95,7 +96,10 @@ _{self.name}_subcommands() {{
 
         options_source = [opt.to_complete_argument() for opt in self.options]
         opt_text = "\\\n".join([indent * 2 + opt for opt in options_source])
-        shell_source = [x.complete_func.zsh_func_source() for x in self.options if x.complete_func]
+        shell_source = [
+            x.complete_func.zsh_func_source()
+            for x in self.options if isinstance(x.complete_func, ExtendAction)
+        ]
 
         source = """
 {func_name}() {{

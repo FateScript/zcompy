@@ -7,10 +7,9 @@ from zcompy import Completion, Files, Option
 
 def test_option_creation_with_completion():
     """Test Option creation with completion function."""
-    completion = Completion(lambda: ["choice1", "choice2"])
-    option = Option(("--choice",), "Select choice", type="CHOICE", complete_func=completion)
-
     with pytest.raises(ValueError):
+        completion = Completion(lambda: ["choice1", "choice2"])
+        option = Option(("--choice",), "Select choice", type="CHOICE", complete_func=completion)
         option.to_complete_argument()
 
 
