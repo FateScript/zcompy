@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 
-from .action import ExtendAction
+from .action import Action, ExtendAction
 from .option import Option
 
 __all__ = ["Command"]
@@ -74,6 +74,28 @@ _{self.name}_subcommands() {{
             completion_code = f"#compdef {self.name}\n\n{completion_code}\n_{self.name}"
         return completion_code
 
+    def add_action_for_options(self, *options, action: Action, recursive: bool = False):
+        """Add an action for the given options.
+
+        Args:
+            options: The option names to add the action for.
+            action: The Action object to add.
+            recursive: If True, also add the action to matching options in sub-commands.
+
+        .. code-block:: python
+            command.add_action_for_options("--file", "--output", action)
+        """
+        target_options = set(options)
+
+        for option in self.options:
+            names = {option.names} if isinstance(option.names, str) else set(option.names)
+            if names & target_options:
+                option.complete_func = action
+
+        if recursive:  # add to sub-commands if recursive
+            for sub_command in self.sub_commands:
+                sub_command.add_action_for_options(*options, action=action, recursive=True)
+
     def completion_entry(self, output_dir: str = "~/.zsh/Completion"):
         """Generate completion script for a Command with sub-commands."""
         output_dir = os.path.expanduser(output_dir)
@@ -120,7 +142,10 @@ def generate_completion_function(command: Command, indent_length=2) -> str:
     indent = " " * indent_length
     options_parts = [opt.to_complete_argument() for opt in command.options]
 
-    shell_source = [x.complete_func.zsh_func_source() for x in command.options if x.complete_func]
+    shell_source = [
+        x.complete_func.zsh_func_source()
+        for x in command.options if isinstance(x.complete_func, ExtendAction)
+    ]
     options_section = f" {zsh_line}{indent * 2}".join(options_parts)
     subcmd_section = f" {zsh_line}{indent * 2}'1: :->cmds' {zsh_line}{indent * 2}'*:: :->args'"  # noqa
 
@@ -140,9 +165,10 @@ _{command.name}() {{
     for subcmd in command.sub_commands:
         if subcmd.options:
             option_parts = [opt.to_complete_argument() for opt in subcmd.options]
-            shell_source.extend(
-                [opt.complete_func.zsh_func_source() for opt in subcmd.options if opt.complete_func]
-            )
+            shell_source.extend([
+                opt.complete_func.zsh_func_source()
+                for opt in subcmd.options if isinstance(opt.complete_func, ExtendAction)
+            ])
             option_args = f" {zsh_line}{indent * 6}".join(option_parts)
             case_statements.append(
                 f"{indent * 4}{subcmd.name})\n{indent * 5}_arguments {zsh_line}{indent * 6}{option_args}\n{indent * 5};;\n"
@@ -161,5 +187,6 @@ _{command.name}() {{
 
     main_function += f"\n{indent}esac\n}}\n"
 
+    shell_source = list(set(shell_source))  # dedup shell function
     shell_source = "\n".join([x for x in shell_source if x])
     return shell_source + "\n" + main_function

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .action import Completion, Files
+from .action import Action
 
 __all__ = ["Option"]
 
@@ -16,7 +16,7 @@ class Option:
     names: tuple[str, ...] | str
     description: str = ""
     type: str = ""
-    complete_func: Completion | Files | None = None
+    complete_func: Action | None = None
     allow_repeat: bool = False
 
     def to_complete_argument(self) -> str:
