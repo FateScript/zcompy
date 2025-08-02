@@ -39,9 +39,12 @@ class Command:
         else:
             self.positional_args.extend(action)
 
-    def add_sub_command(self, sub_command: Command):
+    def add_sub_commands(self, sub_command: Command | list[Command]):
         """Add a sub-command to this command."""
-        self.sub_commands.append(sub_command)
+        if isinstance(sub_command, Command):
+            self.sub_commands.append(sub_command)
+        else:
+            self.sub_commands.extend(sub_command)
 
     def get_all_sub_command_names(self) -> list[str]:
         """Get all sub-command names recursively."""

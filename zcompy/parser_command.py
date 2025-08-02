@@ -41,7 +41,7 @@ class ParserCommand:
         if subparsers:
             for sub_name, (sub_parser, help_text) in subparsers.items():
                 sub_command = self.create_subcommand(sub_name, sub_parser, help_text)
-                command.add_sub_command(sub_command)
+                command.add_sub_commands(sub_command)
 
         return command
 
@@ -116,7 +116,7 @@ class ParserCommand:
                 nested_subcommand = self.create_subcommand(
                     nested_name, nested_parser, nested_help_text
                 )
-                sub_command.add_sub_command(nested_subcommand)
+                sub_command.add_sub_commands(nested_subcommand)
 
         return sub_command
 

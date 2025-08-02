@@ -113,8 +113,7 @@ def test_add_action_for_options_recursive():
     sub2.add_options(Option("--output", "Output file for sub2"))
     sub2.add_options(Option("--log", "Log file for sub2"))
 
-    cmd.add_sub_command(sub1)
-    cmd.add_sub_command(sub2)
+    cmd.add_sub_commands([sub1, sub2])
 
     file_action = Files()
     cmd.add_action_for_options("--input", "--output", action=file_action, recursive=True)
@@ -147,8 +146,8 @@ def test_add_action_for_options_recursive_nested():
     level2.add_options(Option("--input", "Input option"))
     level2.add_options(Option("--file", "Another file option"))
 
-    level1.add_sub_command(level2)
-    cmd.add_sub_command(level1)
+    level1.add_sub_commands(level2)
+    cmd.add_sub_commands(level1)
 
     file_action = Files()
     cmd.add_action_for_options("--file", action=file_action, recursive=True)

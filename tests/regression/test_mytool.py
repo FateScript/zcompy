@@ -42,9 +42,7 @@ def create_mytool_command():
     deploy_cmd.add_options(Option(("--server", "-s"), "Server to deploy to"))
     deploy_cmd.add_options(Option(("--dry-run",), "Show what would be deployed"))
 
-    mytool_cmd.add_sub_command(init_cmd)
-    mytool_cmd.add_sub_command(build_cmd)
-    mytool_cmd.add_sub_command(deploy_cmd)
+    mytool_cmd.add_sub_commands([init_cmd, build_cmd, deploy_cmd])
 
     return mytool_cmd
 
