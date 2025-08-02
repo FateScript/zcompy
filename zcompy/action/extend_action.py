@@ -25,7 +25,7 @@ class ExtendAction(Action):
         pass
 
 
-class GitBranches(Action):
+class GitBranches(ExtendAction):
     tags: bool = False
     # if tags is set, then also show tags
     remote: bool = False
@@ -35,7 +35,7 @@ class GitBranches(Action):
         return "GitRemoteBranches" if self.remote else "GitBranches"
 
     def action_source(self) -> str:
-        return f"_{self.zsh_func_name}"
+        return f"_{self.zsh_func_name()}"
 
     def zsh_func_name(self) -> str:
         if self.remote:
@@ -56,9 +56,9 @@ class GitBranches(Action):
     def _local_branches_source(self) -> str:
         return f"""
 _{self.zsh_func_name()}() {{
-    local branches
-    branches=("${{(f)$(git for-each-ref --format='%(refname:short)' refs/heads)}}")
-    _values 'branch' $branches
+  local branches
+  branches=("${{(f)$(git for-each-ref --format='%(refname:short)' refs/heads)}}")
+  _values 'branch' $branches
 }}
 """
 
@@ -82,7 +82,7 @@ _{self.zsh_func_name()}() {{
 """
 
 
-class GitCommits(Action):
+class GitCommits(ExtendAction):
 
     num_commits: int = 20
 

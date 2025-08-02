@@ -7,6 +7,8 @@ from zcompy.utils import pattern_to_glob
 
 __all__ = [
     "Action",
+    "SimpleAction",
+    "Default",
     "Files",
     "URLs",
     "OSEnv",
@@ -66,6 +68,13 @@ class Files(Action):
         if opts:
             source += " ".join(opts)
         return source.strip()
+
+
+@dataclass
+class Default(SimpleAction):
+    """Default action for commands without specific actions."""
+    hint: str = "Default"
+    cmd_source: str = "_default"
 
 
 @dataclass

@@ -14,10 +14,16 @@ __all__ = ["Command"]
 class Command:
     """Class to represent a command with sub-commands and options."""
 
+    # cmd example: cmd diff -f <files>
+    # cmd -> name
+    # diff -> sub-command
+    # -f -> option
+    # <files> -> positional argument
     name: str
     description: str = ""
     options: list[Option] = field(default_factory=list)
     sub_commands: list[Command] = field(default_factory=list)
+    positional_args: list[Action] = field(default_factory=list)
 
     def add_options(self, options: Option | list[Option]):
         """Add an option to this command."""
@@ -25,6 +31,13 @@ class Command:
             self.options.append(options)
         else:
             self.options.extend(options)
+
+    def add_positional_args(self, action: Action | list[Action]):
+        """Add a positional argument to this command."""
+        if isinstance(action, Action):
+            self.positional_args.append(action)
+        else:
+            self.positional_args.extend(action)
 
     def add_sub_command(self, sub_command: Command):
         """Add a sub-command to this command."""
@@ -110,6 +123,28 @@ _{self.name}_subcommands() {{
         print(f"Completion file created at: {comp_file}")
         print(f"Please add `compdef _{self.name} {self.name}` to your zsh config.")
 
+    def shell_source_used_by_options(self, recursive: bool = False) -> list[str]:
+        """
+        Generate shell source used by option.
+        For example, options might use python/git command to generate completion.
+        """
+        shell_source = [
+            x.complete_func.zsh_func_source()
+            for x in self.options if isinstance(x.complete_func, ExtendAction)
+        ]
+        shell_source.extend(
+            [x.zsh_func_source() for x in self.positional_args if isinstance(x, ExtendAction)]
+        )
+
+        if recursive:
+            for subcmd in self.sub_commands:
+                sub_cmd_source = subcmd.shell_source_used_by_options(recursive=True)
+                shell_source.extend(sub_cmd_source)
+
+        # deduplicate, since set is unordered, we sort it to have a consistent order
+        deduped_source = sorted(x for x in (set(shell_source)) if x)
+        return deduped_source
+
     def generate_non_subcommand_completion(self, indent_length=2) -> str:
         assert len(self.sub_commands) == 0, "Not a subcommand type."
         indent = " " * indent_length
@@ -118,10 +153,7 @@ _{self.name}_subcommands() {{
 
         options_source = [opt.to_complete_argument() for opt in self.options]
         opt_text = "\\\n".join([indent * 2 + opt for opt in options_source])
-        shell_source = [
-            x.complete_func.zsh_func_source()
-            for x in self.options if isinstance(x.complete_func, ExtendAction)
-        ]
+        shell_source = self.shell_source_used_by_options()
 
         source = """
 {func_name}() {{
@@ -142,10 +174,8 @@ def generate_completion_function(command: Command, indent_length=2) -> str:
     indent = " " * indent_length
     options_parts = [opt.to_complete_argument() for opt in command.options]
 
-    shell_source = [
-        x.complete_func.zsh_func_source()
-        for x in command.options if isinstance(x.complete_func, ExtendAction)
-    ]
+    shell_source = command.shell_source_used_by_options(recursive=True)
+
     options_section = f" {zsh_line}{indent * 2}".join(options_parts)
     subcmd_section = f" {zsh_line}{indent * 2}'1: :->cmds' {zsh_line}{indent * 2}'*:: :->args'"  # noqa
 
@@ -165,11 +195,11 @@ _{command.name}() {{
     for subcmd in command.sub_commands:
         if subcmd.options:
             option_parts = [opt.to_complete_argument() for opt in subcmd.options]
-            shell_source.extend([
-                opt.complete_func.zsh_func_source()
-                for opt in subcmd.options if isinstance(opt.complete_func, ExtendAction)
-            ])
             option_args = f" {zsh_line}{indent * 6}".join(option_parts)
+            for idx, x in enumerate(subcmd.positional_args, 1):
+                pos_text = f"{idx}:{x.type_hint()}:{x.action_source()}"
+                option_args += f" {zsh_line}{indent * 6}'{pos_text}'"
+
             case_statements.append(
                 f"{indent * 4}{subcmd.name})\n{indent * 5}_arguments {zsh_line}{indent * 6}{option_args}\n{indent * 5};;\n"
             )
@@ -187,6 +217,5 @@ _{command.name}() {{
 
     main_function += f"\n{indent}esac\n}}\n"
 
-    shell_source = list(set(shell_source))  # dedup shell function
     shell_source = "\n".join([x for x in shell_source if x])
-    return shell_source + "\n" + main_function
+    return f"{shell_source}\n{main_function}"
