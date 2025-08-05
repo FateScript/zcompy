@@ -160,8 +160,13 @@ def test_empty_parser():
     assert command.description == ""
     assert len(command.options) == 0
     assert len(command.sub_commands) == 0
-    with pytest.raises(ValueError):
-        command.complete_source()
+    answer = """
+_command() {
+  _arguments
+}
+""".strip()
+    src = command.complete_source().strip()
+    assert src == answer
 
 
 def test_custom_completion_function():

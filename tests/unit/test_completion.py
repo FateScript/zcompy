@@ -28,7 +28,7 @@ def test_completion_creation_with_files():
 
 def test_completion_creation_with_tuple():
     """Test Completion creation with tuple of choices."""
-    completion = Completion(("auto", "always", "never"))
+    completion = Completion(func=("auto", "always", "never"))
 
     result = completion.action_source()
     assert result == "(auto always never)"

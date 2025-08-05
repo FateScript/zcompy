@@ -14,7 +14,7 @@ _ls_number() {
 
 _abc() {
   _arguments \
-    '(-a)'-a'[Hello world]'\
+    '(-a)'-a'[Hello world]' \
     '(-b -c)'{-b,-c}'[Another option]:NUMBER:_ls_number'
 }
 

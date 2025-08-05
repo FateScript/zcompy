@@ -101,7 +101,7 @@ class GitCommits(ExtendAction):
 class Completion(ExtendAction):
     """Class to represent a completion with its attributes."""
 
-    func: Callable | tuple[str] | Action
+    func: Callable | tuple[str, ...] | Action
     # 1. callable function means a function to call for completion
     # 2. tuple[str] like ('auto', 'always', 'never') means choices to complete
     # 3. Files means a file completion

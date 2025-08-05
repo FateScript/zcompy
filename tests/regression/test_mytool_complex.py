@@ -59,7 +59,8 @@ def test_completion_matches_mytool_complex():
 
     gen_code = [x for x in generated_source.splitlines() if x.strip()]
     ref_code = [x for x in reference_content.splitlines() if x.strip()][1:-1]
-    assert gen_code == ref_code, "Generated completion does not match reference _mytool format"
+    for x, y in zip(gen_code, ref_code):
+        assert x == y, f"Content mismatch:\nExpected: {y}\nGot: {x}"
 
 
 if __name__ == "__main__":

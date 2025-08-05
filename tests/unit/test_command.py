@@ -236,3 +236,66 @@ def test_add_action_for_options_multiple_actions():
     assert url_option.complete_func is url_action
     assert pid_option.complete_func is pid_action
     assert verbose_option.complete_func is None
+
+
+def test_nested_command_generate_func():
+    """Test that subcommand names are returned in correct order."""
+    sub_cmd = r"""
+_sub1_subcommands() {
+  local -a subcmds
+  subcmds=(
+    "sub1a:Create an environment based on an environment file"
+    "sub1b:Export a given environment"
+  )
+  _describe -t subcommands 'subcommands' subcmds
+}
+"""
+
+    answer = r"""
+_sub1() {
+  local state
+  _arguments -C \
+    '(--output)'--output'[Output directory]:Directory:_files -/' \
+    '1: :->cmds' \
+    '*:: :->args'
+
+  case $state in
+    cmds)
+      _sub1_subcommands
+      ;;
+    args)
+      case $words[1] in
+        sub1a)
+          _arguments \
+            '(--pattern)'--pattern'[Pattern for sub1a]:Files:_files'
+          ;;
+        sub1b)
+          _arguments \
+            '(--bopt)'--bopt'[Bopt for sub1b]'
+          ;;
+      esac
+      ;;
+
+  esac
+}
+"""
+    sub1 = Command("sub1", "Level 1 sub1 command")
+    sub1.add_options(Option("--output", "Output directory", complete_func=Files(dir_only=True)))
+
+    sub1a = Command("sub1a", "Create an environment based on an environment file")
+    sub1a.add_options(Option("--pattern", "Pattern for sub1a", complete_func=Files()))
+    sub1b = Command("sub1b", "Export a given environment")
+    sub1b.add_options(Option("--bopt", "Bopt for sub1b"))
+
+    sub1.add_sub_commands([sub1a, sub1b])
+
+    src = sub1.generate_main_function()
+    src_lines = [x for x in src.splitlines() if x.strip()]
+    answer_lines = [x for x in answer.splitlines() if x.strip()]
+    for x, y in zip(src_lines, answer_lines):
+        assert x == y, f"Mismatch at line:\nExpected: {y}\nGot: {x}"
+
+    src = [x for x in sub1.subcommand_completion().splitlines() if x.strip()]
+    answer = [x for x in sub_cmd.splitlines() if x.strip()]
+    for x, y in zip(src, answer):
+        assert x == y, f"Mismatch at line:\nExpected: {y}\nGot: {x}"

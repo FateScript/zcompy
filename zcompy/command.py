@@ -46,50 +46,6 @@ class Command:
         else:
             self.sub_commands.extend(sub_command)
 
-    def get_all_sub_command_names(self) -> list[str]:
-        """Get all sub-command names recursively."""
-        names = []
-        for sub_cmd in self.sub_commands:
-            names.append(sub_cmd.name)
-            # Add nested sub-commands if needed
-            if sub_cmd.sub_commands:
-                for nested_sub_cmd in sub_cmd.sub_commands:
-                    names.append(f"{sub_cmd.name} {nested_sub_cmd.name}")
-        return names
-
-    def subcommand_completion(self, indent=2) -> str:
-        """Generate completion code for sub-commands."""
-        if not self.sub_commands:
-            return ""
-
-        subcmd_descs = [f'"{x.name}:{x.description}"' for x in self.sub_commands]
-        subcmds = "\n".join([f"{' ' * 2 * indent}{desc}" for desc in subcmd_descs])
-
-        completion_code = f"""
-_{self.name}_subcommands() {{
-  local -a subcmds
-  subcmds=(
-{subcmds}
-  )
-  _describe -t subcommands 'subcommands' subcmds
-}}
-"""
-        return completion_code
-
-    def complete_source(self, as_file: bool = False) -> str:
-        """Generate the completion source code for this command."""
-        # Generate all completion code
-        completion_code = ""
-
-        completion_code += self.subcommand_completion()
-        completion_code += "\n"
-
-        # Add main completion function
-        completion_code += generate_completion_function(self)
-        if as_file:
-            completion_code = f"#compdef {self.name}\n\n{completion_code}\n_{self.name}"
-        return completion_code
-
     def add_action_for_options(self, *options, action: Action, recursive: bool = False):
         """Add an action for the given options.
 
@@ -112,19 +68,31 @@ _{self.name}_subcommands() {{
             for sub_command in self.sub_commands:
                 sub_command.add_action_for_options(*options, action=action, recursive=True)
 
-    def completion_entry(self, output_dir: str = "~/.zsh/Completion"):
-        """Generate completion script for a Command with sub-commands."""
-        output_dir = os.path.expanduser(output_dir)
+    def command_depth(self) -> int:
+        """Calculate the depth of the command based on sub-commands."""
+        if not self.sub_commands:
+            return 0
+        return 1 + max(sub_cmd.command_depth() for sub_cmd in self.sub_commands)
 
-        completion_code = self.complete_source(as_file=True)
+    def subcommand_completion(self) -> str:
+        """Generate completion code for sub-commands."""
+        indent = "  "
+        if not self.sub_commands:
+            return ""
 
-        # write to file
-        comp_file = os.path.join(output_dir, f"_{self.name}")
-        with open(comp_file, "w") as f:
-            f.write(completion_code)
+        subcmd_descs = [f'"{x.name}:{x.description}"' for x in self.sub_commands]
+        subcmds = "\n".join([f"{indent * 2}{desc}" for desc in subcmd_descs])
 
-        print(f"Completion file created at: {comp_file}")
-        print(f"Please add `compdef _{self.name} {self.name}` to your zsh config.")
+        completion_code = f"""
+_{self.name}_subcommands() {{
+  local -a subcmds
+  subcmds=(
+{subcmds}
+  )
+  _describe -t subcommands 'subcommands' subcmds
+}}
+"""
+        return completion_code
 
     def shell_source_used_by_options(self, recursive: bool = False) -> list[str]:
         """
@@ -148,77 +116,108 @@ _{self.name}_subcommands() {{
         deduped_source = sorted(x for x in (set(shell_source)) if x)
         return deduped_source
 
-    def generate_non_subcommand_completion(self, indent_length=2) -> str:
-        assert len(self.sub_commands) == 0, "Not a subcommand type."
-        indent = " " * indent_length
-        if not self.options:
-            raise ValueError("Command must have at least one option to generate completion.")
+    def arguments_with_options(self, indent_length=0, context_flag: bool = False) -> str:
+        """Generate the argument source with options for command."""
+        assert len(self.sub_commands) == 0, "Only used when there are no sub-commands."
+        zsh_line = "\\\n"
+        indent = "  "
 
         options_source = [opt.to_complete_argument() for opt in self.options]
-        opt_text = "\\\n".join([indent * 2 + opt for opt in options_source])
-        shell_source = self.shell_source_used_by_options()
+        for idx, x in enumerate(self.positional_args, 1):
+            pos_text = f"'{idx}:{x.type_hint()}:{x.action_source()}'"
+            options_source.append(pos_text)
 
-        source = """
-{func_name}() {{
-  _arguments \\
-{content}
-}}
-"""
-        source_to_write = source.format(func_name=f"_{self.name}", content=opt_text)
-        return "\n\n".join(shell_source + [source_to_write])
+        argument_source = "_arguments -C" if context_flag else "_arguments"
+        source_lines = [argument_source] + [indent + opt for opt in options_source]
+        return f" {zsh_line}".join([indent * indent_length + x for x in source_lines])
 
+    def arguments_with_subcommands(self, indent_length=0) -> str:
+        """Generate the argument source with sub-commands for command."""
+        zsh_line = "\\\n"
+        indent = "  "
 
-def generate_completion_function(command: Command, indent_length=2) -> str:
-    """Generate the main completion function for the command."""
-    if not command.sub_commands:
-        return command.generate_non_subcommand_completion(indent_length)
+        source_lines = [opt.to_complete_argument() for opt in self.options]
+        source_lines.extend(["'1: :->cmds'", "'*:: :->args'"])
 
-    zsh_line = "\\\n"
-    indent = " " * indent_length
-    options_parts = [opt.to_complete_argument() for opt in command.options]
+        source_lines = ["_arguments -C"] + [indent + x for x in source_lines]
+        return f" {zsh_line}".join([indent * indent_length + x for x in source_lines])
 
-    shell_source = command.shell_source_used_by_options(recursive=True)
-
-    options_section = f" {zsh_line}{indent * 2}".join(options_parts)
-    subcmd_section = f" {zsh_line}{indent * 2}'1: :->cmds' {zsh_line}{indent * 2}'*:: :->args'"  # noqa
-
-    main_function = f"""
-_{command.name}() {{
+    def generate_main_function(self) -> str:
+        """Generate main function for current command."""
+        assert len(self.sub_commands) > 0, "Main function generation requires sub-commands."
+        arg_subcommand = self.arguments_with_subcommands(indent_length=1)
+        indent = "  "
+        main_function = f"""
+_{self.name}() {{
   local state
 
-  _arguments -C {zsh_line}    {options_section}{subcmd_section}
+{arg_subcommand}
 
   case $state in
     cmds)
-      _{command.name}_subcommands
+      _{self.name}_subcommands
       ;;
 """
+        case_statements = []
+        for subcmd in self.sub_commands:
+            case_statements.append(f"{indent * 4}{subcmd.name})\n")
+            if subcmd.options:
+                argument_src = subcmd.arguments_with_options(indent_length=5, context_flag=False)
+                case_statements.append(argument_src)
+            case_statements.append(f"\n{indent * 5};;\n")
+        case_section = "".join(case_statements)
 
-    case_statements = []
-    for subcmd in command.sub_commands:
-        if subcmd.options:
-            option_parts = [opt.to_complete_argument() for opt in subcmd.options]
-            option_args = f" {zsh_line}{indent * 6}".join(option_parts)
-            for idx, x in enumerate(subcmd.positional_args, 1):
-                pos_text = f"{idx}:{x.type_hint()}:{x.action_source()}"
-                option_args += f" {zsh_line}{indent * 6}'{pos_text}'"
-
-            case_statements.append(
-                f"{indent * 4}{subcmd.name})\n{indent * 5}_arguments {zsh_line}{indent * 6}{option_args}\n{indent * 5};;\n"
-            )
-        else:
-            case_statements.append(f"{indent * 4}{subcmd.name})\n{indent * 5};;\n")
-    case_section = "".join(case_statements)
-
-    main_function += f"""
+        main_function += f"""
     args)
       case $words[1] in
 {case_section}
       esac
       ;;
+  esac
+}}
 """
+        return main_function
 
-    main_function += f"\n{indent}esac\n}}\n"
+    def generate_non_subcommand_completion(self) -> str:
+        shell_source = self.shell_source_used_by_options()
+        content = self.arguments_with_options(indent_length=1)
+        source_to_write = f"_{self.name}() {{\n{content}\n}}"
+        return "\n\n".join(shell_source + [source_to_write])
 
-    shell_source = "\n".join([x for x in shell_source if x])
-    return f"{shell_source}\n{main_function}"
+    def generate_completion_function(self) -> str:
+        """Generate the main completion function for current command."""
+        if not self.sub_commands:
+            return self.generate_non_subcommand_completion()
+
+        main_function = self.generate_main_function()
+        shell_source = self.shell_source_used_by_options(recursive=True)
+        shell_source = "\n".join(shell_source)
+        return f"{shell_source}\n{main_function}"
+
+    def complete_source(self, as_file: bool = False) -> str:
+        """Generate the completion source code for current command."""
+        # Generate all completion code
+        completion_code = ""
+
+        completion_code += self.subcommand_completion()
+        completion_code += "\n"
+
+        # Add main completion function
+        completion_code += self.generate_completion_function()
+        if as_file:
+            completion_code = f"#compdef {self.name}\n\n{completion_code}\n_{self.name}"
+        return completion_code
+
+    def completion_entry(self, output_dir: str = "~/.zsh/Completion"):
+        """Generate completion script for a Command with sub-commands."""
+        output_dir = os.path.expanduser(output_dir)
+
+        completion_code = self.complete_source(as_file=True)
+
+        # write to file
+        comp_file = os.path.join(output_dir, f"_{self.name}")
+        with open(comp_file, "w") as f:
+            f.write(completion_code)
+
+        print(f"Completion file created at: {comp_file}")
+        print(f"Please add `compdef _{self.name} {self.name}` to your zsh config.")

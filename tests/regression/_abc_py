@@ -27,8 +27,8 @@ _ls_number() {
 
 _abc() {
   _arguments \
-    '(-a)'-a'[Hello]:Files:_files'\
-    '(-b -c)'{-b,-c}'[Another option]:NUMBER:_ls_number'\
+    '(-a)'-a'[Hello]:Files:_files' \
+    '(-b -c)'{-b,-c}'[Another option]:NUMBER:_ls_number' \
     '*--test[It'\''s a test]'
 }
 
