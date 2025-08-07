@@ -74,17 +74,20 @@ class Command:
             return 0
         return 1 + max(sub_cmd.command_depth() for sub_cmd in self.sub_commands)
 
-    def subcommand_completion(self) -> str:
+    def subcommand_completion(self, func_name: str | None = None) -> str:
         """Generate completion code for sub-commands."""
-        indent = "  "
         if not self.sub_commands:
             return ""
+
+        if func_name is None:
+            func_name = self.name
+        indent = "  "
 
         subcmd_descs = [f'"{x.name}:{x.description}"' for x in self.sub_commands]
         subcmds = "\n".join([f"{indent * 2}{desc}" for desc in subcmd_descs])
 
         completion_code = f"""
-_{self.name}_subcommands() {{
+_{func_name}_subcommands() {{
   local -a subcmds
   subcmds=(
 {subcmds}
@@ -142,28 +145,37 @@ _{self.name}_subcommands() {{
         source_lines = ["_arguments -C"] + [indent + x for x in source_lines]
         return f" {zsh_line}".join([indent * indent_length + x for x in source_lines])
 
-    def generate_main_function(self) -> str:
-        """Generate main function for current command."""
+    def generate_main_function(self, func_name: str | None = None) -> str:
         assert len(self.sub_commands) > 0, "Main function generation requires sub-commands."
+        if func_name is None:
+            func_name = self.name
+
+        subcmd_comp_code = self.subcommand_completion(func_name=func_name)
         arg_subcommand = self.arguments_with_subcommands(indent_length=1)
         indent = "  "
         main_function = f"""
-_{self.name}() {{
+_{func_name}() {{
   local state
 
 {arg_subcommand}
 
   case $state in
     cmds)
-      _{self.name}_subcommands
+      _{func_name}_subcommands
       ;;
 """
         case_statements = []
         for subcmd in self.sub_commands:
             case_statements.append(f"{indent * 4}{subcmd.name})\n")
             if subcmd.options:
-                argument_src = subcmd.arguments_with_options(indent_length=5, context_flag=False)
-                case_statements.append(argument_src)
+                subcmd_depth = subcmd.command_depth()
+                if subcmd_depth == 0:
+                    argument_src = subcmd.arguments_with_options(indent_length=5, context_flag=False)  # noqa
+                    case_statements.append(argument_src)
+                else:
+                    subcmd_func_name = f"{func_name}_{subcmd.name}"
+                    main_function = subcmd.generate_main_function(subcmd_func_name) + "\n" + main_function  # noqa
+                    case_statements.append(f"{indent * 5}_{subcmd_func_name}")
             case_statements.append(f"\n{indent * 5};;\n")
         case_section = "".join(case_statements)
 
@@ -176,7 +188,7 @@ _{self.name}() {{
   esac
 }}
 """
-        return main_function
+        return subcmd_comp_code + "\n" + main_function
 
     def generate_non_subcommand_completion(self) -> str:
         shell_source = self.shell_source_used_by_options()
@@ -186,24 +198,18 @@ _{self.name}() {{
 
     def generate_completion_function(self) -> str:
         """Generate the main completion function for current command."""
-        if not self.sub_commands:
+        depth = self.command_depth()
+        if depth == 0:  # no sub-commands, simplest case
             return self.generate_non_subcommand_completion()
-
-        main_function = self.generate_main_function()
-        shell_source = self.shell_source_used_by_options(recursive=True)
-        shell_source = "\n".join(shell_source)
-        return f"{shell_source}\n{main_function}"
+        else:
+            shell_source = self.shell_source_used_by_options(recursive=True)
+            shell_source = "\n".join(shell_source)
+            main_function = self.generate_main_function()
+            return f"{shell_source}\n{main_function}"
 
     def complete_source(self, as_file: bool = False) -> str:
         """Generate the completion source code for current command."""
-        # Generate all completion code
-        completion_code = ""
-
-        completion_code += self.subcommand_completion()
-        completion_code += "\n"
-
-        # Add main completion function
-        completion_code += self.generate_completion_function()
+        completion_code = self.generate_completion_function()
         if as_file:
             completion_code = f"#compdef {self.name}\n\n{completion_code}\n_{self.name}"
         return completion_code

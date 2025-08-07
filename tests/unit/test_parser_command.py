@@ -1,7 +1,5 @@
 from argparse import ArgumentParser
 
-import pytest
-
 from zcompy.action import Files, URLs
 from zcompy.parser_command import ParserCommand
 

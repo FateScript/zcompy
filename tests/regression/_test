@@ -1,0 +1,164 @@
+#compdef _test
+
+_git_branches() {
+  local branches
+  branches=("${(f)$(git for-each-ref --format='%(refname:short)' refs/heads)}")
+  _values 'branch' $branches
+}
+
+
+_test_subcommands() {
+  local -a subcmds
+  subcmds=(
+    "sub1:Level 1 sub1 command"
+    "sub2:Level 1 sub2 command"
+  )
+  _describe -t subcommands 'subcommands' subcmds
+}
+
+
+_test_sub1_subcommands() {
+  local -a subcmds
+  subcmds=(
+    "sub1a:Level 2 sub1a command"
+    "sub1b:Level 2 sub1b command"
+  )
+  _describe -t subcommands 'subcommands' subcmds
+}
+
+
+_test_sub1_sub1a_subcommands() {
+  local -a subcmds
+  subcmds=(
+    "sub1a1:Level 3 sub1a1 command"
+    "sub1a2:Level 3 sub1a2 command"
+  )
+  _describe -t subcommands 'subcommands' subcmds
+}
+
+
+_test_sub1_sub1a_sub1a1_subcommands() {
+  local -a subcmds
+  subcmds=(
+    "leaf:Level 4 leaf command"
+  )
+  _describe -t subcommands 'subcommands' subcmds
+}
+
+
+_test_sub1_sub1a_sub1a1() {
+  local state
+
+  _arguments -C \
+    '(--server)'--server'[Deployment server]' \
+    '1: :->cmds' \
+    '*:: :->args'
+
+  case $state in
+    cmds)
+      _test_sub1_sub1a_sub1a1_subcommands
+      ;;
+
+    args)
+      case $words[1] in
+        leaf)
+          _arguments \
+            '(--dry-run)'--dry-run'[Show what would be deployed]' \
+            '1:Files:_files'
+          ;;
+
+      esac
+      ;;
+  esac
+}
+
+
+_test_sub1_sub1a() {
+  local state
+
+  _arguments -C \
+    '(--pattern)'--pattern'[Test pattern]' \
+    '1: :->cmds' \
+    '*:: :->args'
+
+  case $state in
+    cmds)
+      _test_sub1_sub1a_subcommands
+      ;;
+
+    args)
+      case $words[1] in
+        sub1a1)
+          _test_sub1_sub1a_sub1a1
+          ;;
+        sub1a2)
+          _arguments \
+            '(--port)'--port'[Server port]'
+          ;;
+
+      esac
+      ;;
+  esac
+}
+
+
+_test_sub1() {
+  local state
+
+  _arguments -C \
+    '(--output)'--output'[Output directory]:Directory:_files -/' \
+    '1: :->cmds' \
+    '*:: :->args'
+
+  case $state in
+    cmds)
+      _test_sub1_subcommands
+      ;;
+
+    args)
+      case $words[1] in
+        sub1a)
+          _test_sub1_sub1a
+          ;;
+        sub1b)
+          _arguments \
+            '(--coverage)'--coverage'[Generate coverage report]'
+          ;;
+
+      esac
+      ;;
+  esac
+}
+
+
+_test() {
+  local state
+
+  _arguments -C \
+    '(--verbose)'--verbose'[Enable verbose output]' \
+    '(--config)'--config'[Config file]:Files:_files' \
+    '1: :->cmds' \
+    '*:: :->args'
+
+  case $state in
+    cmds)
+      _test_subcommands
+      ;;
+
+    args)
+      case $words[1] in
+        sub1)
+          _test_sub1
+          ;;
+        sub2)
+          _arguments \
+            '(--optimize)'--optimize'[Optimization level]' \
+            '1:GitBranches:_git_branches'
+          ;;
+
+      esac
+      ;;
+  esac
+}
+
+_test

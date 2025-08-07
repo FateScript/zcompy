@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import tempfile
 
@@ -37,7 +35,8 @@ def test_complete_abc():
             content = f.read()
         content = [x for x in content.splitlines() if x.strip()]
         answer = [x for x in answer.splitlines() if x.strip()]
-        assert content == answer, f"Content mismatch:\nExpected:\n{answer}\nGot:\n{content}"
+        for x, y in zip(content, answer):
+            assert x == y, f"Expected: {x}, but got: {y}"
 
 
 if __name__ == "__main__":

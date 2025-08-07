@@ -251,7 +251,7 @@ _sub1_subcommands() {
 }
 """
 
-    answer = r"""
+    body = r"""
 _sub1() {
   local state
   _arguments -C \
@@ -279,6 +279,7 @@ _sub1() {
   esac
 }
 """
+    answer = sub_cmd + body
     sub1 = Command("sub1", "Level 1 sub1 command")
     sub1.add_options(Option("--output", "Output directory", complete_func=Files(dir_only=True)))
 

@@ -1,15 +1,5 @@
 #compdef mytool
 
-_mytool_subcommands() {
-  local -a subcmds
-  subcmds=(
-    "init:Initialize a new project"
-    "build:Build the project"
-    "deploy:Deploy the project"
-  )
-  _describe -t subcommands 'subcommands' subcmds
-}
-
 _git_branches() {
   local branches
   branches=("${(f)$(git for-each-ref --format='%(refname:short)' refs/heads)}")
@@ -26,6 +16,16 @@ _git_commits() {
     choices+=("$opt:$msg")
   done < <(git log --oneline -n 20 --format='%h %s')
   _describe -t choices 'choices' choices
+}
+
+_mytool_subcommands() {
+  local -a subcmds
+  subcmds=(
+    "init:Initialize a new project"
+    "build:Build the project"
+    "deploy:Deploy the project"
+  )
+  _describe -t subcommands 'subcommands' subcmds
 }
 
 _mytool() {
