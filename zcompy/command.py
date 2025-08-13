@@ -24,6 +24,7 @@ class Command:
     options: list[Option] = field(default_factory=list)
     sub_commands: list[Command] = field(default_factory=list)
     positional_args: list[Action] = field(default_factory=list)
+    repeat_pos_args: Action | None = None
 
     def add_options(self, options: Option | list[Option]):
         """Add an option to this command."""
@@ -106,9 +107,10 @@ _{func_name}_subcommands() {{
             x.complete_func.zsh_func_source()
             for x in self.options if isinstance(x.complete_func, ExtendAction)
         ]
-        shell_source.extend(
-            [x.zsh_func_source() for x in self.positional_args if isinstance(x, ExtendAction)]
-        )
+        shell_source.extend([
+            x.zsh_func_source() for x in [*self.positional_args, self.repeat_pos_args]
+            if isinstance(x, ExtendAction)
+        ])
 
         if recursive:
             for subcmd in self.sub_commands:
@@ -128,6 +130,12 @@ _{func_name}_subcommands() {{
         options_source = [opt.to_complete_argument() for opt in self.options]
         for idx, x in enumerate(self.positional_args, 1):
             pos_text = f"'{idx}:{x.type_hint()}:{x.action_source()}'"
+            options_source.append(pos_text)
+
+        if self.repeat_pos_args:
+            hint = self.repeat_pos_args.type_hint()
+            source = self.repeat_pos_args.action_source()
+            pos_text = f"'*:{hint}:{source}'"
             options_source.append(pos_text)
 
         argument_source = "_arguments -C" if context_flag else "_arguments"

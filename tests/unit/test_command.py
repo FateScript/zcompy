@@ -238,6 +238,22 @@ def test_add_action_for_options_multiple_actions():
     assert verbose_option.complete_func is None
 
 
+def test_repeat_positional_args():
+    """Test adding repeat positional arguments."""
+    answer = r"""
+_testcmd() {
+  _arguments \
+    '*:Directory:_files -/'
+}
+"""
+    cmd = Command("testcmd", "Test command", repeat_pos_args=Files(dir_only=True))
+    source = cmd.complete_source()
+    answer_lines = [x for x in answer.splitlines() if x.strip()]
+    source_lines = [x for x in source.splitlines() if x.strip()]
+    for x, y in zip(source_lines, answer_lines):
+        assert x == y, f"Mismatch at line:\nExpected: {y}\nGot: {x}"
+
+
 def test_nested_command_generate_func():
     """Test that subcommand names are returned in correct order."""
     sub_cmd = r"""
