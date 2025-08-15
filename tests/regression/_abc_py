@@ -1,16 +1,16 @@
 #compdef abc
 
 __ls_number() {
-    python3 -c '
-def ls_number():
+    python3 -c \
+'def ls_number():
     import random
 
     random_letter = "abcdefghijklmnopqrstuvwxyz"
     for idx in range(10):
         letter = "".join(random.choices(random_letter, k=10))
         print(f"{idx} {letter}")
-ls_number()
-'
+
+ls_number()'
 }
 
 _ls_number() {

@@ -37,9 +37,9 @@ def test_complete_abc_py():
         output_file = os.path.join(temp_dir, "_abc")
         with open(output_file, "r") as f:
             content = f.read()
-        content = [x for x in content.splitlines() if x.strip()]
-        answer = [x for x in answer.splitlines() if x.strip()]
-        for x, y in zip(content, answer):
+        content_lines = [x for x in content.splitlines() if x.strip()]
+        answer_lines = [x for x in answer.splitlines() if x.strip()]
+        for x, y in zip(content_lines, answer_lines):
             assert x == y, f"Content mismatch:\nExpected: {y}\nGot: {x}"
 
 

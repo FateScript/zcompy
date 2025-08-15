@@ -6,7 +6,12 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Callable
 
-from zcompy.utils import is_lambda_func, zsh_completion_function
+from zcompy.utils import (
+    is_lambda_func,
+    python_func_as_shell_source,
+    source_by_options_denpendency,
+    zsh_completion_function,
+)
 
 from .action import Action
 
@@ -160,32 +165,6 @@ if __name__ == "__main__":
         # TODO: add change mode
         print(f"Source file created at: {file_name}")
 
-    def py_code_in_shell(self) -> tuple[str, str]:
-        """Generate shell code that embeds the Python function."""
-        func_name = self.func.__name__
-        func_source = inspect.getsource(self.func)
-        has_double_quotes = '"' in func_source
-        has_single_quotes = "'" in func_source
-
-        quote_symbol = '"'  # default to double quotes
-        if has_double_quotes:
-            if has_single_quotes:
-                # convert double quotes to single quotes in the source
-                func_source = func_source.replace('"', "'")
-            else:
-                quote_symbol = "'"
-
-        # create shell function that runs the Python code inline
-        shell_code = f"""__{func_name}() {{
-    python3 -c {quote_symbol}
-{func_source}
-{func_name}()
-{quote_symbol}
-}}
-"""
-
-        return shell_code, f"__{func_name}"
-
     def zsh_func_source(self) -> str:
         if not callable(self.func):
             return ""
@@ -194,6 +173,6 @@ if __name__ == "__main__":
 
         shell_code, cmd_name = "", func_name
         if self.shell_embed:
-            shell_code, cmd_name = self.py_code_in_shell()
+            shell_code, cmd_name = python_func_as_shell_source(self.func)
 
         return shell_code + zsh_completion_function(f"_{func_name}", cmd_name)
