@@ -1,7 +1,7 @@
 #compdef abc
 
 __ls_number() {
-    python3 -c \
+  python3 -c \
 'def ls_number():
     import random
 
