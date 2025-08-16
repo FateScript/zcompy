@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import inspect
 import os
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Callable
 
 from zcompy.utils import (
+    chmod_execute,
     is_lambda_func,
     python_func_as_shell_source,
-    source_by_options_denpendency,
+    python_func_source,
     zsh_completion_function,
 )
 
@@ -20,6 +20,7 @@ __all__ = [
     "ExtendAction",
     "GitBranches",
     "GitCommits",
+    "DependentCompletion",
 ]
 
 
@@ -146,23 +147,17 @@ class Completion(ExtendAction):
             return self.func.action_source()
 
     def write_python(self):
+        assert callable(self.func), "Function must be callable."
+        assert isinstance(self.path, str), "Path must be specified to write."
         func_name = self.func.__name__
         real_path = os.path.expanduser(self.path)
         file_name = os.path.join(real_path, f"{func_name}")
-        func_source = inspect.getsource(self.func)
-
-        py_source = f"""
-#!/usr/bin/env python3
-
-{func_source}
-
-if __name__ == "__main__":
-    {func_name}()
-"""
+        func_source = python_func_source(self.func)
+        file_source = f"#!/usr/bin/env python3\n\n{func_source}"
 
         with open(file_name, "w") as f:
-            f.write(py_source.lstrip())
-        # TODO: add change mode
+            f.write(file_source)
+        chmod_execute(file_name)  # add executed
         print(f"Source file created at: {file_name}")
 
     def zsh_func_source(self) -> str:
@@ -176,3 +171,29 @@ if __name__ == "__main__":
             shell_code, cmd_name = python_func_as_shell_source(self.func)
 
         return shell_code + zsh_completion_function(f"_{func_name}", cmd_name)
+
+
+@dataclass
+class DependentCompletion(Completion):
+    """Action to represent a completion that depends on another action."""
+    func: Callable
+    depends_on: str | tuple[str, ...] | None = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert callable(self.func), "Function must be callable."
+        assert self.depends_on, "Depends on options must be specified."
+
+    def type_hint(self) -> str:
+        return "Depend option Completion"
+
+    def zsh_func_source(self) -> str:
+        func_name = self.func.__name__
+        shell_code, cmd_name = "", func_name
+        if self.shell_embed:
+            shell_code, cmd_name = python_func_as_shell_source(self.func)
+
+        comp_src = zsh_completion_function(
+            f"_{func_name}", cmd_name, options_dependency=self.depends_on
+        )
+        return shell_code + comp_src

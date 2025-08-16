@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import inspect
+import os
 import shlex
+import stat
 import types
 from typing import Callable
 
 __all__ = [
+    "chmod_execute",
     "is_lambda_func",
     "pattern_to_glob",
+    "python_func_source",
     "source_by_options_denpendency",
     "zsh_completion_function"
 ]
@@ -62,7 +66,7 @@ def zsh_completion_function(
     command: str,
     options_dependency: str | tuple[str, ...] | list[tuple[str, ...]] | None = None
 ) -> str:
-    """Generate a zsh completion function source.
+    """Generate source code of zsh completion function.
 
     Args:
         func_name (str): The name of the shell function.
@@ -102,6 +106,26 @@ def zsh_completion_function(
     return shell_source
 
 
+def python_func_source(func: Callable) -> str:
+    """Generate source code of a Python function that can be executed as script."""
+    func_name = func.__name__
+    func_source = inspect.getsource(func)
+    num_args = func.__code__.co_argcount
+    if num_args == 0:
+        full_source = f"{func_source}\n{func_name}()"
+    else:
+        args_source = ", ".join([f"sys.argv[{i}]" for i in range(1, num_args + 1)])
+        full_source = f"""
+import sys
+
+{func_source}
+
+if len(sys.argv) > {num_args}:
+    {func_name}({args_source})
+"""
+    return full_source
+
+
 def python_func_as_shell_source(func: Callable) -> tuple[str, str]:
     """Generate shell code that embeds a Python function.
 
@@ -113,25 +137,16 @@ def python_func_as_shell_source(func: Callable) -> tuple[str, str]:
     """
     indent = " " * 2  # shell indent
     func_name = func.__name__
-    func_source = inspect.getsource(func)
     num_args = func.__code__.co_argcount
+    full_source = python_func_source(func)
+
     if num_args == 0:
-        full_source = f"{func_source}\n{func_name}()"
         shell_code = f"""__{func_name}() {{
 {indent}python3 -c \\
 {shlex.quote(full_source)}
 }}
 """
     else:  # has_args, "import sys" needed
-        args_source = ", ".join([f"sys.argv[{i}]" for i in range(1, num_args + 1)])
-        full_source = f"""
-import sys
-
-{func_source}
-
-if len(sys.argv) > {num_args}:
-    {func_name}({args_source})
-"""
         local_assign = [f'local arg{i}_value="${i}"' for i in range(1, num_args + 1)]
         assignment = "\n".join(indent + x for x in local_assign)
         shell_args = " ".join(f'"$arg{i}_value"' for i in range(1, num_args + 1))
@@ -144,3 +159,9 @@ if len(sys.argv) > {num_args}:
 """
 
     return shell_code, f"__{func_name}"
+
+
+def chmod_execute(filename):
+    """Make a file executable, which equals 'chmod +x file'."""
+    st = os.stat(filename)
+    os.chmod(filename, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)

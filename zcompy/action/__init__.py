@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 from .action import Action, Default, Files, Hosts, OSEnv, ProcessID, SimpleAction, URLs, UserNames
-from .extend_action import Completion, ExtendAction, GitBranches, GitCommits
+from .extend_action import Completion, DependentCompletion, ExtendAction, GitBranches, GitCommits
 
 __all__ = [
     "Action",
@@ -17,4 +15,5 @@ __all__ = [
     "UserNames",
     "Hosts",
     "Completion",
+    "DependentCompletion",
 ]

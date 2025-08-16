@@ -14,9 +14,6 @@ def ls_number():
 
 
 def test_complete_abc():
-    # set a temp path for function saving
-    os.environ["ZCOMPY_FUNC_SAVE_PATH"] = tempfile.gettempdir()
-
     cmd = Command("abc", "abc command")
 
     opts = [
