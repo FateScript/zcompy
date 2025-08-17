@@ -13,6 +13,7 @@ __all__ = [
     "pattern_to_glob",
     "python_func_source",
     "source_by_options_denpendency",
+    "source_by_options_existence",
     "zsh_completion_function"
 ]
 
@@ -30,21 +31,10 @@ def pattern_to_glob(pattern: str | tuple[str]) -> str:
     return ""
 
 
-def _ensure_denpendency(
-    opt: str | tuple[str, ...] | list[tuple[str, ...]]
-) -> list[tuple[str, ...]]:
-    if isinstance(opt, str):
-        opt = (opt,)
-    if not isinstance(opt[0], (tuple, list)):
-        opt = [opt]
-    return opt
-
-
 def source_by_options_denpendency(options_depend_on: str | tuple[str, ...]) -> tuple[str, str]:
     """zsh source option to get option value in cli."""
     if isinstance(options_depend_on, str):
         options_depend_on = (options_depend_on,)
-
     local_name = sorted([x.lstrip("-") for x in options_depend_on], key=len)[0].replace("-", "_")
 
     def combine_options(opt: tuple[str, ...]):
@@ -61,10 +51,33 @@ def source_by_options_denpendency(options_depend_on: str | tuple[str, ...]) -> t
     return full_source, full_name
 
 
+def source_by_options_existence(options_exist: str | tuple[str, ...]) -> tuple[str, str]:
+    if isinstance(options_exist, str):
+        options_exist = (options_exist,)
+
+    local_name = sorted([x.lstrip("-") for x in options_exist], key=len)[0].replace("-", "_")
+    source = " || ".join([f"${{+opt_args[{opt}]}}" for opt in options_exist])
+
+    full_name = f"has_{local_name}"
+    full_source = f"{full_name}=$(( {source} ))"
+    return full_source, full_name
+
+
+def _ensure_structure(
+    opt: str | tuple[str, ...] | list[tuple[str, ...]]
+) -> list[tuple[str, ...]]:
+    if isinstance(opt, str):
+        opt = (opt,)
+    if not isinstance(opt[0], (tuple, list)):
+        opt = [opt]
+    return opt
+
+
 def zsh_completion_function(
     func_name: str,
     command: str,
-    options_dependency: str | tuple[str, ...] | list[tuple[str, ...]] | None = None
+    options_dependency: str | tuple[str, ...] | list[tuple[str, ...]] | None = None,
+    exist_dependency: str | tuple[str, ...] | list[tuple[str, ...]] | None = None,
 ) -> str:
     """Generate source code of zsh completion function.
 
@@ -72,17 +85,28 @@ def zsh_completion_function(
         func_name (str): The name of the shell function.
         command (str): The command executed to generate completions.
         options_dependency (str | tuple[str, ...]): The options that this completion depends on.
-            Default to None, which means no dependency options are required.
+            Default to None, which means no dependent options are required.
+        exist_dependency (str | tuple[str, ...]): The options that must exist for this completion
+            to be valid. Default to None.
     """
     assignments = ""
+    sources, var_names = [], []
     if options_dependency:
-        options_dependency = _ensure_denpendency(options_dependency)
-        sources, var_names = [], []
+        options_dependency = _ensure_structure(options_dependency)
         for opt in options_dependency:
             src, name = source_by_options_denpendency(opt)
             sources.append(src)
             var_names.append(name)
-        var_declar = f"local {', '.join(var_names)}"
+
+    if exist_dependency:
+        exist_dependency = _ensure_structure(exist_dependency)
+        for opt in exist_dependency:
+            src, name = source_by_options_existence(opt)
+            sources.append(src)
+            var_names.append(name)
+
+    if sources:
+        var_declar = f"local {' '.join(var_names)}"
         assignments = "\n".join([f"  {x}" for x in [var_declar] + sources]) + "\n"
         var_suffix = ' '.join(f'"${name}"' for name in var_names)
         command = f"{command} {var_suffix}"

@@ -1,0 +1,40 @@
+#compdef abc
+
+_ls_number() {
+  local -a choices
+  local line opt msg
+
+  while IFS= read -r line; do
+    opt="${line%% *}"
+    msg="${line#* }"
+    choices+=("$opt:$msg")
+  done < <(ls_number)
+  _describe -t choices 'choices' choices
+}
+
+
+
+_ls_number_depend() {
+  local -a choices
+  local line opt msg
+  local b_value
+  b_value=${opt_args[-b]:-${opt_args[-c]}}
+
+  while IFS= read -r line; do
+    opt="${line%% *}"
+    msg="${line#* }"
+    choices+=("$opt:$msg")
+  done < <(ls_number_depend "$b_value")
+  _describe -t choices 'choices' choices
+}
+
+
+_abc() {
+  _arguments \
+    '(-a)'-a'[Hello]:Files:_files' \
+    '(-b -c)'{-b,-c}'[Another option]:NUMBER:_ls_number' \
+    '(-d)'-d'[Denpend -b/-c]:PREFIX_NUMBER:_ls_number_depend' \
+    '*--test[It'\''s a test]'
+}
+
+_abc

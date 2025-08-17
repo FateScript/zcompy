@@ -177,12 +177,19 @@ class Completion(ExtendAction):
 class DependentCompletion(Completion):
     """Action to represent a completion that depends on another action."""
     func: Callable
-    depends_on: str | tuple[str, ...] | None = None
+    depends_on: str | tuple[str, ...] | list[tuple[str, ...]] | None = None
+    # Options that the completion function depends on its value.
+    # for example, `--branch main` in cli and depends_on is "--branch",
+    # the option value `main` will be a args in the completion function.
+    exist_depends_on: str | tuple[str, ...] | list[tuple[str, ...]] | None = None
+    # Options that the completion function depends on its existence.
+    # for example, `--branch` in cli and exist_depends_on is "--branch",
+    # the value `1`/`0` will be a args in the completion function.
 
     def __post_init__(self):
         super().__post_init__()
         assert callable(self.func), "Function must be callable."
-        assert self.depends_on, "Depends on options must be specified."
+        assert self.depends_on or self.exist_depends_on, "Option must depend on another option."
 
     def type_hint(self) -> str:
         return "Depend option Completion"
@@ -194,6 +201,8 @@ class DependentCompletion(Completion):
             shell_code, cmd_name = python_func_as_shell_source(self.func)
 
         comp_src = zsh_completion_function(
-            f"_{func_name}", cmd_name, options_dependency=self.depends_on
+            f"_{func_name}", cmd_name,
+            options_dependency=self.depends_on,
+            exist_dependency=self.exist_depends_on,
         )
         return shell_code + comp_src

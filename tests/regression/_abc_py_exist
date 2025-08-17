@@ -1,0 +1,83 @@
+#compdef abc
+
+__ls_number() {
+  python3 -c \
+'def ls_number():
+    import random
+
+    random_letter = "abcdefghijklmnopqrstuvwxyz"
+    for idx in range(10):
+        letter = "".join(random.choices(random_letter, k=10))
+        print(f"{idx} {letter}")
+
+ls_number()'
+}
+
+_ls_number() {
+  local -a choices
+  local line opt msg
+
+  while IFS= read -r line; do
+    opt="${line%% *}"
+    msg="${line#* }"
+    choices+=("$opt:$msg")
+  done < <(__ls_number)
+  _describe -t choices 'choices' choices
+}
+
+
+__ls_number_depend() {
+  local arg1_value="$1"
+  local arg2_value="$2"
+  python3 -c \
+'
+import sys
+
+def ls_number_depend(a_exist, b_or_c_exist):
+    import random
+    a_exist = int(a_exist)
+    b_or_c_exist = int(b_or_c_exist)
+
+    if a_exist:
+        prefix = "a_" if not b_or_c_exist else "a_bc_"
+    elif b_or_c_exist:
+        prefix = "bc_"
+    else:
+        prefix = "none_"
+
+    random_letter = "abcdefghijklmnopqrstuvwxyz"
+    for idx in range(10):
+        letter = "".join(random.choices(random_letter, k=10))
+        print(f"{prefix}{idx} {letter}")
+
+
+if len(sys.argv) > 2:
+    ls_number_depend(sys.argv[1], sys.argv[2])
+' "$arg1_value" "$arg2_value" 2>/dev/null
+}
+
+_ls_number_depend() {
+  local -a choices
+  local line opt msg
+  local has_a has_b
+  has_a=$(( ${+opt_args[-a]} ))
+  has_b=$(( ${+opt_args[-b]} || ${+opt_args[-c]} ))
+
+  while IFS= read -r line; do
+    opt="${line%% *}"
+    msg="${line#* }"
+    choices+=("$opt:$msg")
+  done < <(__ls_number_depend "$has_a" "$has_b")
+  _describe -t choices 'choices' choices
+}
+
+
+_abc() {
+  _arguments \
+    '(-a)'-a'[Hello]:Files:_files' \
+    '(-b -c)'{-b,-c}'[Another option]:NUMBER:_ls_number' \
+    '(-d)'-d'[Denpend -a and -b/-c]:PREFIX_NUMBER:_ls_number_depend' \
+    '*--test[It'\''s a test]'
+}
+
+_abc

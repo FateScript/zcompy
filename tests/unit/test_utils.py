@@ -1,6 +1,11 @@
 import pytest
 
-from zcompy.utils import pattern_to_glob, source_by_options_denpendency, zsh_completion_function
+from zcompy.utils import (
+    pattern_to_glob,
+    source_by_options_denpendency,
+    source_by_options_existence,
+    zsh_completion_function,
+)
 
 
 @pytest.mark.parametrize("pattern,expected", [
@@ -27,6 +32,24 @@ def test_pattern_to_glob(pattern, expected):
 ])
 def test_source_by_options_dependency(options, expected_source, expected_local_name):
     src, name = source_by_options_denpendency(options)
+    assert src == expected_source, f"Expected: {expected_source}, got: {src}"
+    assert name == expected_local_name, f"Expected: {expected_local_name}, got: {name}"
+
+
+@pytest.mark.parametrize("options, expected_source, expected_local_name", [
+    ("-a", r'has_a=$(( ${+opt_args[-a]} ))', "has_a"),
+    (("-a", ), r'has_a=$(( ${+opt_args[-a]} ))', "has_a"),
+    (("-a", "--full-a"), r'has_a=$(( ${+opt_args[-a]} || ${+opt_args[--full-a]} ))', "has_a"),
+    (("--full-a", "-a"), r'has_a=$(( ${+opt_args[--full-a]} || ${+opt_args[-a]} ))', "has_a"),
+    (["-a", "--full-a"], r'has_a=$(( ${+opt_args[-a]} || ${+opt_args[--full-a]} ))', "has_a"),
+    (
+        ("-a", "--full-a", "--fa"),
+        r"has_a=$(( ${+opt_args[-a]} || ${+opt_args[--full-a]} || ${+opt_args[--fa]} ))",
+        "has_a"
+    ),
+])
+def test_source_by_options_existence(options, expected_source, expected_local_name):
+    src, name = source_by_options_existence(options)
     assert src == expected_source, f"Expected: {expected_source}, got: {src}"
     assert name == expected_local_name, f"Expected: {expected_local_name}, got: {name}"
 
