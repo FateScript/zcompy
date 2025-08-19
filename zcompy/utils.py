@@ -12,6 +12,7 @@ __all__ = [
     "is_lambda_func",
     "pattern_to_glob",
     "python_func_source",
+    "set_shell_embed",
     "source_by_options_denpendency",
     "source_by_options_existence",
     "zsh_completion_function"
@@ -189,3 +190,7 @@ def chmod_execute(filename):
     """Make a file executable, which equals 'chmod +x file'."""
     st = os.stat(filename)
     os.chmod(filename, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def set_shell_embed(value: bool = True):
+    os.environ["ZCOMPY_SHELL_EMBED"] = "1" if value else "0"

@@ -120,6 +120,11 @@ class Completion(ExtendAction):
         if is_lambda_func(self.func):
             raise ValueError("Lambda functions are not supported.")
 
+        shell_embed = os.environ.get("ZCOMPY_SHELL_EMBED", False)
+        if shell_embed:
+            assert isinstance(shell_embed, str)
+            self.shell_embed = shell_embed.lower() == "true" or shell_embed == "1"
+
         if callable(self.func) and not self.shell_embed:
             # specify the path to save the function
             if not self.path:
