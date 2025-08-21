@@ -115,6 +115,8 @@ class Completion(ExtendAction):
     # if True, the python function will be embedded in a shell file
     path: str | None = None
     # if shell_embed is False, the path to save the shell file
+    ignore_exception: bool = False
+    # if set to True, exceptions of func will be redirected to /dev/null
 
     def __post_init__(self):
         if is_lambda_func(self.func):

@@ -2,6 +2,7 @@ import pytest
 
 from zcompy.utils import (
     pattern_to_glob,
+    python_func_as_shell_source,
     source_by_options_denpendency,
     source_by_options_existence,
     zsh_completion_function,
@@ -92,3 +93,30 @@ f() {
 def test_zsh_com_func(shell_name, command, dependencies, answer):
     src = zsh_completion_function(shell_name, command, dependencies)
     assert src.strip() == answer.strip()
+
+
+def simple():
+    print("Hello, World!")
+
+
+SIMPLE_SOURCE = r"""
+__simple() {
+  python3 -c \
+'def simple():
+    print("Hello, World!")
+
+simple()'
+}
+"""
+
+SIMPLE_SOURCE_EXCEPT = SIMPLE_SOURCE.rstrip() + " 2>/dev/null"
+
+
+@pytest.mark.parametrize("func, expected, ignore", [
+    (simple, (SIMPLE_SOURCE, "__simple"), False),
+    (simple, (SIMPLE_SOURCE_EXCEPT, "__simple"), True),
+])
+def test_py_func_as_shell(func, expected, ignore):
+    src, name = python_func_as_shell_source(func, ignore)
+    assert src.strip() == expected[0].strip()
+    assert name == expected[1]

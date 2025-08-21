@@ -151,11 +151,12 @@ if len(sys.argv) > {num_args}:
     return full_source
 
 
-def python_func_as_shell_source(func: Callable) -> tuple[str, str]:
+def python_func_as_shell_source(func: Callable, ignore_exception: bool = False) -> tuple[str, str]:
     """Generate shell code that embeds a Python function.
 
     Args:
         func (Callable): The Python function to embed.
+        ignore_exception (bool): If True, exceptions will be redirected to /dev/null.
 
     Returns:
         A tuple containing the shell code and the function name.
@@ -164,12 +165,13 @@ def python_func_as_shell_source(func: Callable) -> tuple[str, str]:
     func_name = func.__name__
     num_args = func.__code__.co_argcount
     full_source = python_func_source(func)
+    redirect_text = " 2>/dev/null" if ignore_exception else ""
 
     if num_args == 0:
         shell_code = f"""__{func_name}() {{
 {indent}python3 -c \\
 {shlex.quote(full_source)}
-}}
+}}{redirect_text}
 """
     else:  # has_args, "import sys" needed
         local_assign = [f'local arg{i}_value="${i}"' for i in range(1, num_args + 1)]
@@ -180,7 +182,7 @@ def python_func_as_shell_source(func: Callable) -> tuple[str, str]:
 {assignment}
 {indent}python3 -c \\
 {shlex.quote(full_source)} {shell_args} 2>/dev/null
-}}
+}}{redirect_text}
 """
 
     return shell_code, f"__{func_name}"
