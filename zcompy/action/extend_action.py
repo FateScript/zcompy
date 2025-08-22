@@ -175,7 +175,7 @@ class Completion(ExtendAction):
 
         shell_code, cmd_name = "", func_name
         if self.shell_embed:
-            shell_code, cmd_name = python_func_as_shell_source(self.func)
+            shell_code, cmd_name = python_func_as_shell_source(self.func, self.ignore_exception)
 
         return shell_code + zsh_completion_function(f"_{func_name}", cmd_name)
 
@@ -205,7 +205,7 @@ class DependentCompletion(Completion):
         func_name = self.func.__name__
         shell_code, cmd_name = "", func_name
         if self.shell_embed:
-            shell_code, cmd_name = python_func_as_shell_source(self.func)
+            shell_code, cmd_name = python_func_as_shell_source(self.func, self.ignore_exception)
 
         comp_src = zsh_completion_function(
             f"_{func_name}", cmd_name,
