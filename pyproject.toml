@@ -7,8 +7,8 @@ name = "zcompy"
 version = "0.0.1"
 description = "Generate zsh completions with Python."
 requires-python = ">=3.8"
-authors = [
-    { name = "Feng Wang", email = "wangfeng19950315@163.com" }
+maintainers = [
+    {name = "Feng Wang", email = "wangfeng19950315@163.com"}
 ]
 urls = { "Homepage" = "https://github.com/FateScript/zcompy" }
 readme = {file = "README.md", content-type = "text/markdown"}

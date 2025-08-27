@@ -68,7 +68,7 @@ def test_completion_zsh_func_source():
     def test_func():
         return ["choice1", "choice2"]
 
-    completion = Completion(test_func)
+    completion = Completion(test_func, shell_embed=False)
     result = completion.zsh_func_source()
 
     # Test exact shell function format
@@ -175,7 +175,7 @@ def test_completion_shell_code_function_format():
     def test_func():
         return ["choice1", "choice2"]
 
-    completion = Completion(test_func)
+    completion = Completion(test_func, shell_embed=False)
     result = completion.zsh_func_source()
 
     # Test exact shell function format

@@ -18,7 +18,10 @@ def test_complete_abc():
 
     opts = [
         Option(("-a",), "Hello world"),
-        Option(("-b", "-c"), "Another option", type="NUMBER", complete_func=Completion(ls_number)),
+        Option(
+            ("-b", "-c"), "Another option", type="NUMBER",
+            complete_func=Completion(ls_number, shell_embed=False)
+        ),
     ]
     cmd.add_options(opts)
 

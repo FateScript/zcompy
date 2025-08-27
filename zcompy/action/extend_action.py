@@ -111,7 +111,7 @@ class Completion(ExtendAction):
     # 1. callable function means a function to call for completion
     # 2. tuple[str] like ('auto', 'always', 'never') means choices to complete
     # 3. Files means a file completion
-    shell_embed: bool = False
+    shell_embed: bool = True
     # if True, the python function will be embedded in a shell file
     path: str | None = None
     # if shell_embed is False, the path to save the shell file
