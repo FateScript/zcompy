@@ -10,7 +10,7 @@ Instead of writing complex zsh completion scripts by hand, you can define your c
 - 🎯 **Type-safe**: Built-in support for common argument types (files, directories, strings)
 - 🔄 **Sub-commands**: Full support for nested sub-commands
 - 🎨 **Custom completions**: Define your own completion functions with python functions
-- 🔗 **Dependencies**: Completion can depend on other option values
+- 🔗 **Dependencies**: Completion could depend on other option values
 
 ## Installation
 
@@ -81,7 +81,7 @@ autoload -U compinit && compinit
 compdef _mytool mytool
 ```
 
-👉 Please type `mytool` in cli and press <TAB> to feel the magic 🪄
+👉 Please type `mytool` in cli and press `<TAB>` to feel the magic 🪄
 
 ## Usage
 
@@ -144,7 +144,7 @@ branch_option = Option(
 
 #### Dependent Completions
 
-Completions can depend on other option values:
+Completions could depend on other options' value/existence:
 
 ```python
 from zcompy import DependentCompletion, Option

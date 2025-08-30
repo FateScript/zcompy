@@ -25,6 +25,7 @@ zcompy = ["**/__pycache__", "**/*.pyc", "**/*.pyo"]
 
 [project.optional-dependencies]
 dev = [
+    "absl-py",
     "pytest",
     "pytest-cov",
     "ruff",
