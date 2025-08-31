@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from absl.flags import FlagValues, FLAGS
+from absl.flags import FLAGS, FlagValues
 
-from zcompy import Completion, Command, Option
+from zcompy import Command, Completion, Option
 
 # code to refer for absl
 # https://github.com/abseil/abseil-py/blob/1952c49b72a4a3cd88e8d1ddc6fb0230e37e5390/absl/flags/__init__.py#L123

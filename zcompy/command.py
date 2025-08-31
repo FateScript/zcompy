@@ -234,3 +234,19 @@ _{func_name}() {{
 
         print(f"Completion file created at: {comp_file}")
         print(f"Please add `compdef _{self.name} {self.name}` to your zsh config.")
+
+    def __eq__(self, other) -> bool:
+        def sort_cmd(cmds: list[Command]) -> list[Command]:
+            return sorted(cmds, key=lambda cmd: cmd.name)
+
+        if not isinstance(other, Command):
+            return False
+        for attr in vars(self):
+            self_val = getattr(self, attr)
+            other_val = getattr(other, attr)
+            if attr == "sub_commands":
+                if sort_cmd(self_val) != sort_cmd(other_val):
+                    return False
+            elif self_val != other_val:
+                return False
+        return True

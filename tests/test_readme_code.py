@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import tempfile
 import pathlib
 import re
 import subprocess
+import tempfile
 
 
 def test_code_in_readme():

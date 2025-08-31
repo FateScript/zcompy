@@ -1,6 +1,6 @@
 """zcompy - Generate zsh completions with Python."""
 
-from .action import Action, Completion, DependentCompletion, ExtendAction, Files
+from .action import Action, Completion, Default, DependentCompletion, ExtendAction, Files
 from .command import Command
 from .option import Option
 
@@ -14,4 +14,5 @@ __all__ = [
     "Action",
     "ExtendAction",
     "Files",
+    "Default",
 ]

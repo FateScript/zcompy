@@ -1,8 +1,9 @@
 
-from absl import flags
 from enum import Enum
 
-from zcompy import Option, Completion, Command
+from absl import flags
+
+from zcompy import Command, Completion, Option
 from zcompy.absl_command import AbslFlagsCommand
 
 

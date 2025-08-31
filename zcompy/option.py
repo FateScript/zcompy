@@ -41,3 +41,16 @@ class Option:
             comp_func = f":{self.type}:{self.complete_func.action_source()}"
 
         return f"'{opt_text}[{desc}]{comp_func}'"
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Option):
+            return False
+        for attr_name in vars(self):
+            self_val = getattr(self, attr_name)
+            other_val = getattr(other, attr_name)
+            if attr_name == "names":
+                if sorted(self_val) != sorted(other_val):
+                    return False
+            elif self_val != other_val:
+                return False
+        return True
