@@ -142,6 +142,104 @@ branch_option = Option(
 
 ### Advanced Usage
 
+#### Automatic CLI Framework Support
+
+zcompy provides built-in support for generating completions from popular Python CLI frameworks:
+
+##### ArgumentParser support
+```python
+from argparse import ArgumentParser
+from zcompy.parser_command import ParserCommand
+
+# Create your argparse parser
+parser = ArgumentParser(prog="mytool", description="My awesome CLI tool")
+parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+parser.add_argument("--config", "-c", type=str, help="Config file path")
+parser.add_argument("--mode", choices=["auto", "manual", "disabled"], help="Operation mode")
+
+# Add sub-commands
+subparsers = parser.add_subparsers(dest="command")
+build_parser = subparsers.add_parser("build", help="Build the project")
+build_parser.add_argument("--output", "-o", type=str, help="Output directory")
+
+# Generate completion using zcompy
+parser_command = ParserCommand(parser)
+command = parser_command.to_command()
+print(command.complete_source())
+
+# Add custom completion for file paths
+from zcompy.action import Files
+parser_command.add_action_for_options("--config", "--output", action=Files())
+```
+
+##### Abseil ([absl-py](https://github.com/abseil/abseil-py)) Support
+```python
+from absl import flags
+from zcompy.absl_command import AbslFlagsCommand
+
+# Define your absl flags
+FLAGS = flags.FLAGS
+flags.DEFINE_string('name', 'World', 'The name to greet')
+flags.DEFINE_integer('count', 1, 'The number of greetings')
+flags.DEFINE_bool('verbose', False, 'Whether to display verbose output')
+flags.DEFINE_enum('color', 'blue', ['red', 'blue', 'green'], 'Choose a color')
+
+# Generate completion using zcompy
+cmd = AbslFlagsCommand(name="mytool").to_command()
+print(cmd.complete_source())
+```
+
+##### [Fire](https://github.com/google/python-fire) Support
+
+Users could use FireCommand like [fire-guide](https://github.com/google/python-fire/blob/master/docs/guide.md).
+
+###### python class
+```python
+import fire
+from zcompy.fire_command import FireCommand
+
+class MyCLI:
+    """My awesome CLI tool."""
+
+    def add(self, x, y):
+        """Addition command"""
+        return x + y
+
+    def mul(self, a, b):
+        """Multiplication command"""
+        return a * b
+
+    def build(self, output_dir="./build", optimize=True):
+        """Build the project"""
+        return f"Building to {output_dir}"
+
+# Generate completion using zcompy
+fire_cmd = FireCommand(name="mytool", obj=MyCLI)
+command = fire_cmd.to_command()
+print(command.complete_source())
+```
+
+##### python function
+
+```python
+def add_func(x, y):
+    """Addition command"""
+    return x + y
+
+fire_cmd = FireCommand(name="calc", obj=add_func)
+command = fire_cmd.to_command()
+print(command.complete_source())
+```
+
+##### python dict
+
+```python
+func_dict = {"add": lambda x, y: x + y, "mul": lambda a, b: a * b}
+fire_cmd = FireCommand(name="math", obj=func_dict)
+command = fire_cmd.to_command()
+print(command.complete_source())
+```
+
 #### Dependent Completions
 
 Completions could depend on other options' value/existence:
