@@ -14,6 +14,7 @@ class Option:
     names: tuple[str, ...] | str
     description: str = ""
     type: str = ""
+    # If complete_func is None, no completion will be provided for this option.
     complete_func: Action | None = None
     allow_repeat: bool = False
 

@@ -172,6 +172,26 @@ from zcompy.action import Files
 parser_command.add_action_for_options("--config", "--output", action=Files())
 ```
 
+##### Click support
+```python
+import click
+from zcompy.click_command import ClickCommand
+
+# Create your argparse parser
+@click.command()
+@click.option("--count", default=1, help="Number of greetings.")
+@click.option("--name", prompt="Your name", help="The person to greet.")
+def hello(count, name):
+    """Simple program that greets NAME for a total of COUNT times."""
+    for _ in range(count):
+        click.echo(f"Hello, {name}!")
+
+# Generate completion using zcompy
+click_command = ClickCommand(funcs=hello)
+command = click_command.to_command()
+print(command.complete_source())
+```
+
 ##### Abseil ([absl-py](https://github.com/abseil/abseil-py)) Support
 ```python
 from absl import flags

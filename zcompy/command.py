@@ -32,6 +32,18 @@ class Command:
         else:
             self.options.extend(options)
 
+    def apply_on_command(self, func):
+        """Apply a function to this command and all sub-commands."""
+        func(self)
+        for sub_cmd in self.sub_commands:
+            sub_cmd.apply_on_command(func)
+
+    def get_sub_command(self, name: str) -> Command | None:
+        for sub_cmd in self.sub_commands:
+            if sub_cmd.name == name:
+                return sub_cmd
+        return None
+
     def add_positional_args(self, action: Action | list[Action]):
         """Add a positional argument to this command."""
         if isinstance(action, Action):
@@ -55,7 +67,7 @@ class Command:
             recursive: If True, also add the action to matching options in sub-commands.
 
         .. code-block:: python
-            command.add_action_for_options("--file", "--output", action)
+            command.add_action_for_options("--file", "--output", action=action)
         """
         target_options = set(options)
 
@@ -174,8 +186,8 @@ _{func_name}() {{
         case_statements = []
         for subcmd in self.sub_commands:
             case_statements.append(f"{indent * 4}{subcmd.name})\n")
-            if subcmd.options:
-                subcmd_depth = subcmd.command_depth()
+            subcmd_depth = subcmd.command_depth()
+            if subcmd.options or subcmd_depth > 0:
                 if subcmd_depth == 0:
                     argument_src = subcmd.arguments_with_options(indent_length=5, context_flag=False)  # noqa
                     case_statements.append(argument_src)
