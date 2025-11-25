@@ -55,11 +55,16 @@ def convert_click_param_to_option(param) -> Option | None:
     if not description:
         description = f"Option for {names[0]}"
 
+    allow_repeat = False
+    if hasattr(param, "multiple") and param.multiple:
+        allow_repeat = True
+
     option = Option(
         names=names,
         description=description,
         type=option_type,
-        complete_func=complete_func
+        complete_func=complete_func,
+        allow_repeat=allow_repeat
     )
 
     return option
@@ -76,7 +81,10 @@ class ClickCommand:
 
     def __post_init__(self):
         if callable(self.funcs):
-            self.name = self.funcs.name
+            if self.name is None:
+                self.name = self.funcs.name
+            if not self.description:
+                self.description = self.funcs.help or ""
         else:
             assert self.name is not None, "name must be provided when funcs is a list"
 
@@ -98,8 +106,8 @@ class ClickCommand:
     def to_sub_command(self) -> Command:
         """Convert a simple Click function to a Command object with options."""
         # cloup converts underscores to hyphens in command names
-        command_name = self.funcs.name.replace('-', '_')  # underscores function names
-        cmd = Command(command_name, description=self.funcs.help or "")
+        command_name = self.name.replace('-', '_')  # underscores function names
+        cmd = Command(command_name, description=self.description)
 
         # Extract options and arguments from Click command
         if hasattr(self.funcs, 'params'):

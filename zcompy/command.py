@@ -86,6 +86,15 @@ class Command:
             return 0
         return 1 + max(sub_cmd.command_depth() for sub_cmd in self.sub_commands)
 
+    def should_complete(self) -> bool:
+        """Determine if this command should have completion.
+
+        If a command has options or sub-commands, it should have completion.
+        """
+        has_subcmd = self.command_depth() > 0
+        has_options = self.options or self.repeat_pos_args or self.positional_args
+        return has_options or has_subcmd
+
     def subcommand_completion(self, func_name: str | None = None) -> str:
         """Generate completion code for sub-commands."""
         if not self.sub_commands:
@@ -187,7 +196,7 @@ _{func_name}() {{
         for subcmd in self.sub_commands:
             case_statements.append(f"{indent * 4}{subcmd.name})\n")
             subcmd_depth = subcmd.command_depth()
-            if subcmd.options or subcmd_depth > 0:
+            if subcmd.should_complete():
                 if subcmd_depth == 0:
                     argument_src = subcmd.arguments_with_options(indent_length=5, context_flag=False)  # noqa
                     case_statements.append(argument_src)
