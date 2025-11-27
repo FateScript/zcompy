@@ -34,6 +34,7 @@ def test_complete_abc():
         with open(output_file, "r") as f:
             content = f.read()
         content = [x for x in content.splitlines() if x.strip()]
+        content = [x for x in content if all(not x.startswith(k) for k in ("compdef", "zstyle"))]
         answer = [x for x in answer.splitlines() if x.strip()]
         for x, y in zip(content, answer):
             assert x == y, f"Expected: {x}, but got: {y}"

@@ -66,6 +66,10 @@ def test_complete_abc_py(shell_embed):
         with open(output_file, "r") as f:
             content = f.read()
         content_lines = [x for x in content.splitlines() if x.strip()]
+        content_lines = [
+            x for x in content_lines
+            if all(not x.startswith(k) for k in ("compdef", "zstyle"))
+        ]
         answer_lines = [x for x in answer.splitlines() if x.strip()]
         for x, y in zip(content_lines, answer_lines):
             assert x == y, f"Content mismatch:\nExpected: {y}\nGot: {x}"

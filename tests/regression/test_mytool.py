@@ -65,6 +65,7 @@ def test_completion_matches_mytool():
             reference_content = f.read()
 
         gen_code = [x for x in generated_content.splitlines() if x.strip()]
+        gen_code = [x for x in gen_code if all(not x.startswith(k) for k in ("compdef", "zstyle"))]
         ref_code = [x for x in reference_content.splitlines() if x.strip()]
         assert gen_code == ref_code, "Generated completion does not match reference _mytool format"
 

@@ -235,18 +235,26 @@ _{func_name}() {{
             main_function = self.generate_main_function()
             return f"{shell_source}\n{main_function}"
 
-    def complete_source(self, as_file: bool = False) -> str:
+    def complete_source(self, as_file: bool = False, sort_completion: bool = True) -> str:
         """Generate the completion source code for current command."""
         completion_code = self.generate_completion_function()
         if as_file:
-            completion_code = f"#compdef {self.name}\n\n{completion_code}\n_{self.name}"
+            sort_flag = "true" if sort_completion else "false"
+            compdef_code = f"compdef _{self.name} {self.name}"
+            sort_code = f"zstyle ':completion:*:{self.name}:*' sort {sort_flag}"
+            completion_code = f"#compdef {self.name}\n{compdef_code}\n{sort_code}\n\n{completion_code}\n\n_{self.name}"  # noqa
+
         return completion_code
 
-    def completion_entry(self, output_dir: str = "~/.zsh/Completion"):
+    def completion_entry(
+        self,
+        output_dir: str = "~/.zsh/Completion",
+        sort_completion: bool = True,
+    ):
         """Generate completion script for a Command with sub-commands."""
         output_dir = os.path.expanduser(output_dir)
 
-        completion_code = self.complete_source(as_file=True)
+        completion_code = self.complete_source(as_file=True, sort_completion=sort_completion)
 
         # write to file
         comp_file = os.path.join(output_dir, f"_{self.name}")
