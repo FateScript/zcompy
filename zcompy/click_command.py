@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from click.core import Command as ClickCommandType
 
 from .action import Completion, Default

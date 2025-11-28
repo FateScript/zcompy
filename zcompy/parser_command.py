@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from argparse import Action as ParserAction
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _AppendAction, _StoreFalseAction, _StoreTrueAction
 from dataclasses import dataclass
 from typing import Callable
 
@@ -52,6 +52,8 @@ class ParserCommand:
 
         names = tuple(action.option_strings)
         description = action.help or ""
+        allow_repeat = True if isinstance(action, _AppendAction) else False
+        no_complete_func = isinstance(action, (_StoreTrueAction, _StoreFalseAction))
 
         # determine option type
         option_type = ""
@@ -89,8 +91,8 @@ class ParserCommand:
             names=names,
             description=description,
             type=option_type,
-            complete_func=complete_func,
-            allow_repeat=getattr(action, "allow_repeat", False),
+            complete_func=None if no_complete_func else complete_func,
+            allow_repeat=allow_repeat,
         )
 
     def create_subcommand(
