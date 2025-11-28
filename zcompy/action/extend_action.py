@@ -26,6 +26,7 @@ __all__ = [
 ]
 
 
+@dataclass
 class ExtendAction(Action):
 
     @abstractmethod
@@ -33,6 +34,7 @@ class ExtendAction(Action):
         pass
 
 
+@dataclass
 class CustomShell(ExtendAction):
 
     func_name: str
@@ -49,6 +51,7 @@ class CustomShell(ExtendAction):
         return zsh_completion_function(self.func_name, self.cmd)
 
 
+@dataclass
 class GitBranches(ExtendAction):
     tags: bool = False
     # if tags is set, then also show tags
@@ -106,9 +109,11 @@ _{self.zsh_func_name()}() {{
 """
 
 
+@dataclass
 class GitCommits(ExtendAction):
 
     num_commits: int = 20
+    full_hash: bool = False
 
     def type_hint(self) -> str:
         return "GitCommits"
