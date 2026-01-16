@@ -18,8 +18,10 @@ from .action import Action
 __all__ = [
     "Completion",
     "ExtendAction",
+    "CustomShell",
     "GitBranches",
     "GitCommits",
+    "PidDetails",
     "DependentCompletion",
 ]
 
@@ -29,6 +31,22 @@ class ExtendAction(Action):
     @abstractmethod
     def zsh_func_source(self) -> str:
         pass
+
+
+class CustomShell(ExtendAction):
+
+    func_name: str
+    cmd: str
+    hint: str = "CustomShell"
+
+    def type_hint(self) -> str:
+        return self.hint
+
+    def action_source(self) -> str:
+        return self.func_name
+
+    def zsh_func_source(self) -> str:
+        return zsh_completion_function(self.func_name, self.cmd)
 
 
 class GitBranches(ExtendAction):
@@ -99,8 +117,29 @@ class GitCommits(ExtendAction):
         return "_git_commits"
 
     def zsh_func_source(self) -> str:
+        func_name = self.action_source()
         cmd = f"git log --oneline -n {self.num_commits} --format='%h %s'"
-        return zsh_completion_function("_git_commits", cmd)
+        return zsh_completion_function(func_name, cmd)
+
+
+class PidDetails(ExtendAction):
+
+    user: bool = False
+
+    def type_hint(self) -> str:
+        return "PidDetails"
+
+    def action_source(self) -> str:
+        return "_pids_details"
+
+    def zsh_func_source(self) -> str:
+        func_name = self.action_source()
+        if self.user:
+            cmd = "ps --no-headers -eo pid,user,args"
+        else:
+            cmd = "ps --no-headers -eo pid,args"
+        cmd += "| awk '{$1=$1; print}'"   # awk to trim leading spaces
+        return zsh_completion_function(func_name, cmd)
 
 
 @dataclass
