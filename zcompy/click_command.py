@@ -44,6 +44,12 @@ def convert_click_param_to_option(param) -> Option | None:
         option_type = type_name.capitalize()
         if hasattr(param, 'default') and param.default is not None:
             complete_func = Completion(func=(str(param.default),))
+            try:  # override default completion for unset values
+                from click._utils import Sentinel
+                if param.default is Sentinel.UNSET:
+                    complete_func = Default()   # Default action for unset
+            except ImportError:
+                pass
         else:
             complete_func = Default()   # Default action for unknown types
     # fallback to default type for unknown parameter type
