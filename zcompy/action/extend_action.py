@@ -127,6 +127,7 @@ class GitCommits(ExtendAction):
         return zsh_completion_function(func_name, cmd)
 
 
+@dataclass
 class PidDetails(ExtendAction):
 
     user: bool = False
@@ -257,3 +258,30 @@ class DependentCompletion(Completion):
             exist_dependency=self.exist_depends_on,
         )
         return shell_code + comp_src
+
+
+@dataclass
+class MultiCompletions(Completion):
+    """Action to represent multiple completions for one option."""
+
+    func: list[Action]
+
+    def __post_init__(self):
+        assert len(self.func) > 1, "There must be more than one completion for MultiCompletions."
+        for completion in self.func:
+            assert isinstance(completion, Action), "All actions must be Completion instances."
+
+    def type_hint(self) -> str:
+        # It's a bit hacky here
+        # For multiple completions of one option, it looks like ':First:_Action1 :Second:_Action2'
+        # so we just return the type hint of the first action and return the rest in action_source
+        return self.func[0].type_hint()
+
+    def action_source(self) -> str:
+        src = self.func[0].action_source()
+        for action in self.func[1:]:
+            src += f" :{action.type_hint()}:{action.action_source()}"
+        return src
+
+    def zsh_func_source(self) -> str:
+        return "\n".join([x.zsh_func_source() if isinstance(x, Completion) else "" for x in self.func])
